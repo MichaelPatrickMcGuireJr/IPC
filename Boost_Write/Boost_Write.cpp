@@ -1,47 +1,57 @@
+/*
+ *   Author:  Michael McGuire
+ *  Purpose:  using the boost library to create and write value to shared memory
+ * Language:  c++
+ */
+
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
-//#include<stdio.h>
 #include<windows.h>
-
 
 
 int main(int argc, char* argv[ ])
 {
+    // statement to use functions within the interprocess family within the boost library implicitly
     using namespace boost::interprocess;
+
+
     try
 	{
+	    // remove any other objects in shared memory having the same name
 		struct shm_remove
-      {
-         shm_remove() { shared_memory_object::remove("Hello"); }
-         ~shm_remove(){ shared_memory_object::remove("Hello"); }
-      } remover;
+        {
+            shm_remove() { shared_memory_object::remove("mem1"); }
+            ~shm_remove(){ shared_memory_object::remove("mem1"); }
+        } remover;
 
-    	// creating our first shared memory object.
-    	shared_memory_object sharedmem1 (create_only, "Hello", read_write);
+    	// create and name a space in shared memory
+    	shared_memory_object sharedmem1 (create_only, "mem1", read_write);
 
-
-    	// setting the size of the shared memory
+    	// allocate the size of the shared memory in bytes
     	sharedmem1.truncate (100);
 
-   		// map the shared memory to current process
+   		// map this region of shared memory to a local variable
    		mapped_region region(sharedmem1, read_write);
 
-    	// access the mapped region using get_address
+    	// place a char* into the shared memory
     	std::strcpy(static_cast<char* >(region.get_address()), "Hello World!");
 
+    	// indicate on console that the memory region has been written to
 		printf("Writing \"Hello World!\" to shared memory location \n");
-
+		// pause execution - the region of shared memory will be destroyed when thread is closed
 		Sleep(36000);
-
-		printf("removing shared memory location \n");
     }
 	catch (interprocess_exception& e)
 	{
-		printf("interprocess exception \n");
-    	// .. .  clean up
+	    // print exception
+		printf("interprocess exception \"%s\"", e.what());
     }
 
-    return 1;
+    // indicate end of main thread and that the location in memory will be over-written
+    printf("removing shared memory location \n");
+
+    // exit main
+    return 0;
 }
 
 
